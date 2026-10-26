@@ -1,0 +1,107 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\BusinessUnitResource\Pages;
+use App\Models\BusinessUnit;
+use App\Models\Company;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+
+class BusinessUnitResource extends Resource
+{
+    protected static ?string $model = BusinessUnit::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-squares-2x2';
+
+    protected static ?string $navigationGroup = '👥 Organization';
+
+    protected static ?int $navigationSort = 5;
+
+    protected static ?string $modelLabel = 'business unit';
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\Hidden::make('company_id')
+                    ->default(fn () => Company::current()->id),
+                Forms\Components\Section::make('Business Unit')
+                    ->compact()
+                    ->columns(3)
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required(),
+                        Forms\Components\TextInput::make('code'),
+                        Forms\Components\Toggle::make('is_active')
+                            ->label('Active')
+                            ->default(true),
+                        Forms\Components\Textarea::make('description')
+                            ->rows(2)
+                            ->columnSpanFull(),
+                    ]),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('code')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('Active')
+                    ->boolean()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->defaultSort('name')
+            ->striped()
+            ->persistSortInSession()
+            ->persistFiltersInSession()
+            ->deferLoading()
+            ->deferFilters()
+            ->paginationPageOptions([10, 25, 50, 100])
+            ->filters([
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Active'),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListBusinessUnits::route('/'),
+            'create' => Pages\CreateBusinessUnit::route('/create'),
+            'view' => Pages\ViewBusinessUnit::route('/{record}'),
+            'edit' => Pages\EditBusinessUnit::route('/{record}/edit'),
+        ];
+    }
+}

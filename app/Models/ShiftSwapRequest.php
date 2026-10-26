@@ -1,0 +1,54 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Concerns\ScopedByEmployee;
+use App\Models\Scopes\EmployeeDataScope;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class ShiftSwapRequest extends Model
+{
+    use HasFactory, ScopedByEmployee;
+
+    public const STATUSES = [
+        'pending' => 'Pending',
+        'approved' => 'Approved',
+        'rejected' => 'Rejected',
+    ];
+
+    protected $fillable = [
+        'company_id', 'employee_id', 'swap_with_employee_id', 'date',
+        'reason', 'status', 'reviewed_by_user_id', 'reviewed_at', 'remarks',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'date' => 'date',
+            'reviewed_at' => 'datetime',
+        ];
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
+    }
+
+    /** Not limited by data access - the colleague swapped with may be outside the viewer's own team. */
+    public function swapWithEmployee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'swap_with_employee_id')->withoutGlobalScope(EmployeeDataScope::class);
+    }
+
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by_user_id');
+    }
+}
